@@ -1,24 +1,27 @@
 # geode-xmake
 
-A WIP xmake setup for writing geode mods
+A WIP `xmake` setup for writing geode mods
 
-## how to use (for now)
+## Setup
 
-clone this repo, make a new directory in it with a mod.json and some source code, then plop this into an `xmake.lua`:
+1. Create an `xmake` project if you don't already have one:
+
+```sh
+xmake create -l c++ yourprojectname
+```
+
+2. Write and save a valid Geode `mod.json` ([How to configure your mod (Geode docs)](https://docs.geode-sdk.org/mods/configuring))
+3. Copy `geode.lua` from here into your project
+4. Add this to your projects `xmake.lua`:
+
 ```lua
-includes("../geode.lua")
+includes("geode.lua")
 
-set_config("plat", "windows")
-set_config("arch", "x64")
-set_config("toolchain", "geode-win")
-
-target("<author>.<mod>")
+target("<author>.<id>")
 do
-    add_rules("geode.mod")
-    add_files("src/*.cpp")
-    set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)")
-    set_policy("build.ccache", false)
+	add_rules("geode.mod")
+	add_files("src/*.cpp")
 end
 ```
 
-i will be making it easier to make a mod with this later, but for now you need to do the above
+5. No step 5, you're done. Just use `xmake` as you usually would.
