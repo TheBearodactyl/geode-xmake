@@ -1,6 +1,54 @@
 add_rules("mode.debug", "mode.release")
 set_defaultmode("release")
 
+local function xmake_packages_cmake(target)
+	local include_dirs = {}
+	local link_dirs = {}
+	local links = {}
+
+	for _, pkg in pairs(target:pkgs() or {}) do
+		for _, dir in ipairs(table.wrap(pkg:get("includedirs") or {})) do
+			table.insert(include_dirs, dir)
+		end
+		for _, dir in ipairs(table.wrap(pkg:get("sysincludedirs") or {})) do
+			table.insert(include_dirs, dir)
+		end
+		for _, dir in ipairs(table.wrap(pkg:get("linkdirs") or {})) do
+			table.insert(link_dirs, dir)
+		end
+		for _, l in ipairs(table.wrap(pkg:get("links") or {})) do
+			table.insert(links, l)
+		end
+		for _, l in ipairs(table.wrap(pkg:get("syslinks") or {})) do
+			table.insert(links, l)
+		end
+	end
+
+	local lines = ""
+	if #include_dirs > 0 then
+		lines = lines .. "target_include_directories(${PROJECT_NAME} PRIVATE\n"
+		for _, d in ipairs(include_dirs) do
+			lines = lines .. string.format('    "%s"\n', d:gsub("\\", "/"))
+		end
+		lines = lines .. ")\n"
+	end
+	if #link_dirs > 0 then
+		lines = lines .. "target_link_directories(${PROJECT_NAME} PRIVATE\n"
+		for _, d in ipairs(link_dirs) do
+			lines = lines .. string.format('    "%s"\n', d:gsub("\\", "/"))
+		end
+		lines = lines .. ")\n"
+	end
+	if #links > 0 then
+		lines = lines .. "target_link_libraries(${PROJECT_NAME} PRIVATE\n"
+		for _, l in ipairs(links) do
+			lines = lines .. string.format('    "%s"\n', l)
+		end
+		lines = lines .. ")\n"
+	end
+	return lines
+end
+
 rule("geode.mod")
 
 on_load(function(target)
@@ -99,6 +147,7 @@ on_config(function(target)
 		for _, f in ipairs(sources) do
 			cmake_sources = cmake_sources .. string.format('    "%s"\n', f:gsub("\\", "/"))
 		end
+		local pkg_cmake = xmake_packages_cmake(target)
 		io.writefile(
 			path.join(mod_dir, "CMakeLists.txt"),
 			string.format(
@@ -114,10 +163,11 @@ add_library(${PROJECT_NAME} SHARED
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
 setup_geode_mod(${PROJECT_NAME})
-]],
+%s]],
 				mod_id,
 				sdk_path:gsub("\\", "/"),
-				cmake_sources
+				cmake_sources,
+				pkg_cmake
 			)
 		)
 
@@ -202,6 +252,7 @@ on_build(function(target)
 	for _, f in ipairs(sources) do
 		cmake_sources = cmake_sources .. string.format('    "%s"\n', f:gsub("\\", "/"))
 	end
+	local pkg_cmake = xmake_packages_cmake(target)
 	io.writefile(
 		path.join(mod_dir, "CMakeLists.txt"),
 		string.format(
@@ -217,11 +268,12 @@ add_library(${PROJECT_NAME} SHARED
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
 setup_geode_mod(${PROJECT_NAME}%s)
-]],
+%s]],
 			mod_id,
 			sdk_path:gsub("\\", "/"),
 			cmake_sources,
-			dont_install_str
+			dont_install_str,
+			pkg_cmake
 		)
 	)
 

@@ -2,6 +2,11 @@
 
 A WIP `xmake` setup for writing geode mods
 
+Has support for:
+
+- `xmake` and `cmake` dependency mixing
+- full cross-platform mod building
+
 ## Setup
 
 1. Create an `xmake` project if you don't already have one:
